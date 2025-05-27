@@ -1,14 +1,6 @@
-//
-//  main.cpp
-//  BlackJack
-//
-//  Created by Alex De la Rosa on 26/05/25.
-//
-
-#include <iostream>
-
-int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+#include<iostream>
+using namespace std;
+int main( ){
+    cout<<"Hola mundo\n";
     return 0;
 }
