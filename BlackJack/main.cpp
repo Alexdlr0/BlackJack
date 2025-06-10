@@ -9,6 +9,7 @@ enum Tipo{TREBOLES = 1, DIAMANTES, CORAZONES, PICAS};
 
 struct DatosCartas{
     int tipo;
+    char nombre[20];
     int valor;
 };
 struct Cartas{
@@ -24,62 +25,67 @@ struct Casa{
     //puntos y juego
 };
 
+string tipoCarta(int tipo){
+    switch(tipo){
+        case 1:
+            return "Treboles";
+            break;
+        case 2:
+            return "Diamantes";
+            break;
+        case 3:
+            return "Corazones";
+            break;
+        case 4:
+            return "Picas";
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
 void crearBaraja(struct Cartas* cartas){
     int cant = cartas->cant;
     cartas->datosCartas = (struct DatosCartas*) malloc(cant * sizeof(struct DatosCartas));
     
     for(int i=0; i<cant; i++){
-        if(i<13){
-            cartas->datosCartas[i].tipo = 1;
-            if(i<10){
-                cartas->datosCartas[i].valor = i+1;
-            }else{
-                cartas->datosCartas[i].valor = 10;
-            }
+        int tipo = i / 13+1;
+        int valor = i % 13 + 1;
+        cartas->datosCartas[i].tipo = tipo;
+        
+        char nombreCarta[20];
+        
+        if(valor == 11){
+            strcpy(nombreCarta, "J");
+            cartas->datosCartas[i].valor = 10;
+        }else if(valor == 12){
+            strcpy(nombreCarta, "Q");
+            cartas->datosCartas[i].valor = 10;
+        }else if(valor == 13){
+            strcpy(nombreCarta, "K");
+            cartas->datosCartas[i].valor = 10;
+        }else{
+            snprintf(nombreCarta, sizeof(nombreCarta), "%d", valor);
+            cartas->datosCartas[i].valor = valor;
         }
-        if(i>=13 && i<26){
-            cartas->datosCartas[i].tipo = 2;
-            if(i<23){
-                cartas->datosCartas[i].valor = i+1-13;
-            }else{
-                cartas->datosCartas[i].valor = 10;
-            }
-        }
-        if(i>=26 && i<39){
-            cartas->datosCartas[i].tipo = 3;
-            if(i<36){
-                cartas->datosCartas[i].valor = i+1-26;
-            }else{
-                cartas->datosCartas[i].valor = 10;
-            }
-
-        }
-        if(i>=39 && i<52){
-            cartas->datosCartas[i].tipo = 4;
-            if(i<49){
-                cartas->datosCartas[i].valor = i+1-39;
-            }else{
-                cartas->datosCartas[i].valor = 10;
-            }
-
-        }
+        
+        char nombreFinal[20];
+        snprintf(nombreFinal, sizeof(nombreFinal), "%s de %s", nombreCarta, tipoCarta(tipo).c_str());
+        
+        strcpy(cartas->datosCartas[i].nombre, nombreFinal);
+        
     }
-    
 }
 
-string tipoCarta(){
-    return 0;
-};
-
 int main( ){
-    //srand((unsigned int)time(NULL));
     Cartas cartas;
     crearBaraja(&cartas);
     
     cout<<" --- BLACKJACK --- \n";
     
     for(int i=0; i<cartas.cant; i++){
-        cout<<"Tipo: "<<cartas.datosCartas[i].tipo<<"  Valor: "<<cartas.datosCartas[i].valor<<endl;
+        cout<<"Nombre: "<<cartas.datosCartas[i].nombre<<" Valor: "<<cartas.datosCartas[i].valor<<endl;
     }
     
     return 0;
