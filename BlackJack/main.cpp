@@ -112,31 +112,29 @@ void crearPartidas(struct Juego* juego, struct Cartas* cartas){
 
 int darCarta(struct Cartas* cartas, struct Juego* juego, bool turno, int ronda){
     int indice = cartasBarajeadas[conteo++];
-        int valor = cartas->datosCartas[indice].valor;
+    int valor = cartas->datosCartas[indice].valor;
 
-        cout << cartas->datosCartas[indice].nombre << endl;
+    cout<<cartas->datosCartas[indice].nombre<<endl;
 
-        // Si es As, preguntar valor
-        if (valor == 1 && turno == 0) { // solo el jugador elige
-            int valorAs = 0;
-            do {
-                cout << " --- ¿Qué valor eliges?, 1 o 11: ";
-                cin >> valorAs;
-            } while (valorAs != 1 && valorAs != 11);
-            valor = valorAs;
+    //Assss
+    if(valor == 1 && turno == 0) {
+        int valorAs = 0;
+        do{
+            cout<<" --- Qué valor eliges? 1 o 11: ";
+            cin>>valorAs;
+        }while(valorAs != 1 && valorAs != 11);
+        valor = valorAs;
+    }
+
+    if(turno == 0) {
+        juego->partida[ronda].puntosJug += valor;
+    }else{
+        if(valor == 1 && (juego->partida[ronda].puntosCasa + 11 <= 21)){
+            valor = 11;
         }
-
-        if (turno == 0) {
-            juego->partida[ronda].puntosJug += valor;
-        } else {
-            // Lógica simple para casa: si As y puntos + 11 <= 21, usar 11
-            if (valor == 1 && (juego->partida[ronda].puntosCasa + 11 <= 21)) {
-                valor = 11;
-            }
-            juego->partida[ronda].puntosCasa += valor;
-        }
-
-        return valor;
+        juego->partida[ronda].puntosCasa += valor;
+    }
+    return valor;
 }
 
 void rondasJuego(struct Juego* juego, struct Jugador* jugador, struct Cartas* cartas){
@@ -149,74 +147,73 @@ void rondasJuego(struct Juego* juego, struct Jugador* jugador, struct Cartas* ca
     file<<endl;
     time_t now = time(0);
         tm *ltm = localtime(&now);
-        file << "\nFecha: "
-             << 1900 + ltm->tm_year << "/"
-             << 1 + ltm->tm_mon << "/"
-             << ltm->tm_mday << " "
-             << ltm->tm_hour << ":"
-             << (ltm->tm_min < 10 ? "0" : "") << ltm->tm_min
-             << "\n";
+        file <<"\nFecha: "
+             <<1900 + ltm->tm_year << "/"
+             <<1 + ltm->tm_mon << "/"
+             <<ltm->tm_mday << " "
+             <<ltm->tm_hour << ":"
+             <<(ltm->tm_min < 10 ? "0" : "") << ltm->tm_min
+             <<"\n";
     file<<jugador->nombre<<" Partidas: "<<juego->cantidad;
     
-    for(int i = 0; i < juego->cantidad; i++){
+    for(int i=0; i<juego->cantidad; i++){
         bool turno = 0; // 0 jugador, 1 casa
 
-        cout << "\n --- Ronda " << i + 1 << " ---\n";
+        cout<<"\n --- Ronda " <<i + 1<< " ---\n";
         juego->partida[i].puntosJug = 0;
         juego->partida[i].puntosCasa = 0;
 
         // Jugador
-        cout << "\nMazo del jugador:\n";
+        cout<<"\nMazo del jugador:\n";
         turno = 0;
         int posJug = 0;
         juego->partida[i].mazoJug[posJug++] = darCarta(cartas, juego, turno, i);
         juego->partida[i].mazoJug[posJug++] = darCarta(cartas, juego, turno, i);
-        cout << "Puntos jugador: " << juego->partida[i].puntosJug << endl;
+        cout<<"Puntos jugador: "<<juego->partida[i].puntosJug<<endl;
 
         char opcion;
-        while (juego->partida[i].puntosJug < 21) {
-            cout << "\n¿Quieres otra carta? (s/n): ";
-            cin >> opcion;
-            if (opcion == 's' || opcion == 'S') {
+        while(juego->partida[i].puntosJug < 21){
+            cout<<"\nQuieres otra carta? (s/n): ";
+            cin>>opcion;
+            if(opcion == 's' || opcion == 'S'){
                 juego->partida[i].mazoJug[posJug++] = darCarta(cartas, juego, turno, i);
-                cout << "Puntos jugador: " << juego->partida[i].puntosJug << endl;
-            } else {
+                cout<<"Puntos jugador: "<<juego->partida[i].puntosJug<<endl;
+            }else {
                 break;
             }
         }
 
-        // --- Casa ---
-        cout << "\nMazo de la casa:\n";
+        // Casa
+        cout<<"\nMazo de la casa:\n";
         turno = 1;
         int posCasa = 0;
         juego->partida[i].mazoCasa[posCasa++] = darCarta(cartas, juego, turno, i);
         juego->partida[i].mazoCasa[posCasa++] = darCarta(cartas, juego, turno, i);
-        cout << "Puntos casa: " << juego->partida[i].puntosCasa << endl;
+        cout<<"Puntos casa: "<<juego->partida[i].puntosCasa<<endl;
 
-        while (juego->partida[i].puntosCasa < 17) {
-            cout << "Casa pide otra carta...\n";
+        while(juego->partida[i].puntosCasa < 17){
+            cout<<"Casa pide otra carta...\n";
             juego->partida[i].mazoCasa[posCasa++] = darCarta(cartas, juego, turno, i);
-            cout << "Puntos casa: " << juego->partida[i].puntosCasa << endl;
+            cout<<"Puntos casa: "<<juego->partida[i].puntosCasa<<endl;
         }
-
         int pj = juego->partida[i].puntosJug;
         int pc = juego->partida[i].puntosCasa;
 
-        cout << "\n--- Resultado Ronda " << i + 1 << " ---\n";
-        if (pj > 21) {
-            cout << "Te pasaste de 21. Gana la casa.\n";
+        cout<<"\n--- Resultado ronda " <<i + 1<< " ---\n";
+        if(pj > 21){
+            cout<<"Te pasaste de 21. Gana la casa.\n";
             file<<endl<<"Perdio";
-        } else if (pc > 21) {
-            cout << "La casa se pasó de 21. ¡Ganas!\n";
+        }else if(pc > 21){
+            cout<<"La casa se pasó de 21. ¡Ganas!\n";
             file<<endl<<"Gano";
-        } else if (pj > pc) {
-            cout << "¡Ganas esta ronda!\n";
+        }else if(pj > pc){
+            cout << "Ganas esta ronda!\n";
             file<<endl<<"Gano";
-        } else if (pc > pj) {
-            cout << "Gana la casa.\n";
+        }else if(pc > pj){
+            cout<<"Gana la casa.\n";
             file<<endl<<"Perdio";
-        } else {
-            cout << "Empate.\n";
+        }else{
+            cout<<"Empate.\n";
             file<<endl<<"Empate";
         }
     }
