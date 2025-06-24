@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/alexdelarosa/Documents/ISC/ISC2/Programcion/BlackJack/BlackJack/output/main'
+relocations:     []
+...

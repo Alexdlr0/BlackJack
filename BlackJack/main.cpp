@@ -3,6 +3,7 @@
 #include<cstring>
 #include<cstdlib>
 #include<ctime>
+#include<fstream>
 using namespace std;
 
 enum Tipo{TREBOLES = 1, DIAMANTES, CORAZONES, PICAS};
@@ -95,7 +96,6 @@ void crearBaraja(struct Cartas* cartas){
 void barajeo( ){
     for (int i=0; i<52; i++){
         cartasBarajeadas[i] = i;
-        cout<<cartasBarajeadas[i]<<endl;
     }
     cout<<endl;
     srand(time(NULL));
@@ -103,44 +103,124 @@ void barajeo( ){
             int j = rand() % (i + 1);
             swap(cartasBarajeadas[i], cartasBarajeadas[j]);
         }
-    cout << "\nCartas barajeadas (índices):\n";
-        for (int i = 0; i < 52; i++) {
-            cout << cartasBarajeadas[i] <<endl;
-        }
 }
 
 void crearPartidas(struct Juego* juego, struct Cartas* cartas){
     juego->partida = (struct Partida*) malloc(juego->cantidad * sizeof(struct Partida));
 }
 
-int darCarta(struct Cartas* cartas){
-    int valorAs=0;
-    if(cartas->datosCartas[cartasBarajeadas[conteo]].valor == 1){
-        do{
-            cout<<"Que valor eliges?, 1 o 11: ";
-            cin>>valorAs;
-        }while(valorAs != 1 && valorAs != 11);
-    }
-    return cartasBarajeadas[conteo++];
+
+int darCarta(struct Cartas* cartas, struct Juego* juego, bool turno, int ronda){
+    int indice = cartasBarajeadas[conteo++];
+        int valor = cartas->datosCartas[indice].valor;
+
+        cout << cartas->datosCartas[indice].nombre << endl;
+
+        // Si es As, preguntar valor
+        if (valor == 1 && turno == 0) { // solo el jugador elige
+            int valorAs = 0;
+            do {
+                cout << " --- ¿Qué valor eliges?, 1 o 11: ";
+                cin >> valorAs;
+            } while (valorAs != 1 && valorAs != 11);
+            valor = valorAs;
+        }
+
+        if (turno == 0) {
+            juego->partida[ronda].puntosJug += valor;
+        } else {
+            // Lógica simple para casa: si As y puntos + 11 <= 21, usar 11
+            if (valor == 1 && (juego->partida[ronda].puntosCasa + 11 <= 21)) {
+                valor = 11;
+            }
+            juego->partida[ronda].puntosCasa += valor;
+        }
+
+        return valor;
 }
 
 void rondasJuego(struct Juego* juego, struct Jugador* jugador, struct Cartas* cartas){
-    //Rondas de BlackJack
-    for(int i = 0; i<juego->cantidad; i++){
-        
-        //ronda i
-        //reparto 2 cartas cada uno
-        juego->partida[i].mazoJug[0] = darCarta(cartas);
-        juego->partida[i].mazoCasa[0] = darCarta(cartas);
-        juego->partida[i].mazoJug[1] = darCarta(cartas);
-        juego->partida[i].mazoCasa[1] = darCarta(cartas);
-        
-        cout<<"Carta jugador: \n"<< cartas->datosCartas[ juego->partida[i].mazoJug[0]].nombre <<endl
-                               <<cartas->datosCartas[ juego->partida[i].mazoJug[1]].nombre <<endl;
-        cout<<"Carta casa: \n"<< cartas->datosCartas[ juego->partida[i].mazoCasa[0]].nombre <<endl
-                            <<cartas->datosCartas[ juego->partida[i].mazoCasa[1]].nombre <<endl;
-        
+    
+    fstream file;
+    file.open("../resultados.txt", ios::app);
+    if(!file){
+        cout<<"Error al abrir archivo\n";
     }
+    file<<endl;
+    time_t now = time(0);
+        tm *ltm = localtime(&now);
+        file << "\nFecha: "
+             << 1900 + ltm->tm_year << "/"
+             << 1 + ltm->tm_mon << "/"
+             << ltm->tm_mday << " "
+             << ltm->tm_hour << ":"
+             << (ltm->tm_min < 10 ? "0" : "") << ltm->tm_min
+             << "\n";
+    file<<jugador->nombre<<" Partidas: "<<juego->cantidad;
+    
+    for(int i = 0; i < juego->cantidad; i++){
+        bool turno = 0; // 0 jugador, 1 casa
+
+        cout << "\n --- Ronda " << i + 1 << " ---\n";
+        juego->partida[i].puntosJug = 0;
+        juego->partida[i].puntosCasa = 0;
+
+        // Jugador
+        cout << "\nMazo del jugador:\n";
+        turno = 0;
+        int posJug = 0;
+        juego->partida[i].mazoJug[posJug++] = darCarta(cartas, juego, turno, i);
+        juego->partida[i].mazoJug[posJug++] = darCarta(cartas, juego, turno, i);
+        cout << "Puntos jugador: " << juego->partida[i].puntosJug << endl;
+
+        char opcion;
+        while (juego->partida[i].puntosJug < 21) {
+            cout << "\n¿Quieres otra carta? (s/n): ";
+            cin >> opcion;
+            if (opcion == 's' || opcion == 'S') {
+                juego->partida[i].mazoJug[posJug++] = darCarta(cartas, juego, turno, i);
+                cout << "Puntos jugador: " << juego->partida[i].puntosJug << endl;
+            } else {
+                break;
+            }
+        }
+
+        // --- Casa ---
+        cout << "\nMazo de la casa:\n";
+        turno = 1;
+        int posCasa = 0;
+        juego->partida[i].mazoCasa[posCasa++] = darCarta(cartas, juego, turno, i);
+        juego->partida[i].mazoCasa[posCasa++] = darCarta(cartas, juego, turno, i);
+        cout << "Puntos casa: " << juego->partida[i].puntosCasa << endl;
+
+        while (juego->partida[i].puntosCasa < 17) {
+            cout << "Casa pide otra carta...\n";
+            juego->partida[i].mazoCasa[posCasa++] = darCarta(cartas, juego, turno, i);
+            cout << "Puntos casa: " << juego->partida[i].puntosCasa << endl;
+        }
+
+        int pj = juego->partida[i].puntosJug;
+        int pc = juego->partida[i].puntosCasa;
+
+        cout << "\n--- Resultado Ronda " << i + 1 << " ---\n";
+        if (pj > 21) {
+            cout << "Te pasaste de 21. Gana la casa.\n";
+            file<<endl<<"Perdio";
+        } else if (pc > 21) {
+            cout << "La casa se pasó de 21. ¡Ganas!\n";
+            file<<endl<<"Gano";
+        } else if (pj > pc) {
+            cout << "¡Ganas esta ronda!\n";
+            file<<endl<<"Gano";
+        } else if (pc > pj) {
+            cout << "Gana la casa.\n";
+            file<<endl<<"Perdio";
+        } else {
+            cout << "Empate.\n";
+            file<<endl<<"Empate";
+        }
+    }
+    file.close();
 }
 
 int main( ){
@@ -151,10 +231,7 @@ int main( ){
     crearBaraja(&cartas);
     
     cout<<" --- BLACKJACK --- \n";
-    
-    for(int i=0; i<cartas.cant; i++){
-        cout<<"Nombre: "<<cartas.datosCartas[i].nombre<<" Valor: "<<cartas.datosCartas[i].valor<<endl;
-    }
+
     
     cout<<"\nIngresa tu nombre: ";
     getline(cin, jugador.nombre);
@@ -170,5 +247,7 @@ int main( ){
     
     free(juego.partida);
     free(cartas.datosCartas);
+    
+    cout<<endl;
     return 0;
 }
